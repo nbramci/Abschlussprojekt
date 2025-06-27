@@ -1,0 +1,22 @@
+[project]
+name = "PUE_GruppeA"
+version = "0.1.0"
+description = "Default template for PDM package"
+authors = [
+    {name = "nbramci", email = "nw.brandstetter@mci4me.at"},
+]
+dependencies = [
+    "streamlit>=1.45.1",
+    "ipykernel>=6.29.5",
+    "matplotlib>=3.10.3",
+    "plotly>=6.1.2",
+    "nbformat>=5.10.4",
+    "numpy>=2.2.6",
+]
+requires-python = "==3.13.*"
+readme = "README.md"
+license = {text = "MIT"}
+
+
+[tool.pdm]
+distribution = false

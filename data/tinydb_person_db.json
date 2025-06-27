@@ -1,0 +1,71 @@
+{
+  "_default": {
+    "1": {
+      "id": 1,
+      "date_of_birth": 1989,
+      "firstname": "Julian",
+      "lastname": "Huber",
+      "username": "jhuber",
+      "picture_path": "data/pictures/tb.jpg",
+      "password": "test123",
+      "role": "user",
+      "ekg_tests": [
+        {
+          "id": 1,
+          "date": "10.2.2023",
+          "result_link": "data/ekg_data/01_Ruhe.txt"
+        },
+        {
+          "id": 2,
+          "date": "11.3.2023",
+          "result_link": "data/ekg_data/04_Belastung.txt"
+        }
+      ]
+    },
+    "2": {
+      "id": 2,
+      "date_of_birth": 1967,
+      "firstname": "Yannic",
+      "lastname": "Heyer",
+      "username": "yheyer",
+      "picture_path": "data/pictures/js.jpg",
+      "password": "test123",
+      "role": "user",
+      "ekg_tests": [
+        {
+          "id": 3,
+          "date": "10.2.2023",
+          "result_link": "data/ekg_data/02_Ruhe.txt"
+        }
+      ]
+    },
+    "3": {
+      "id": 3,
+      "date_of_birth": 1973,
+      "firstname": "Yunus",
+      "lastname": "Schmirander",
+      "username": "yschmirander",
+      "picture_path": "data/pictures/bl.jpg",
+      "password": "test123",
+      "role": "user",
+      "ekg_tests": [
+        {
+          "id": 4,
+          "date": "11.3.2023",
+          "result_link": "data/ekg_data/03_Ruhe.txt"
+        }
+      ]
+    },
+    "4": {
+      "id": 4,
+      "date_of_birth": 1985,
+      "firstname": "Anna",
+      "lastname": "Meier",
+      "username": "admin",
+      "picture_path": "data/pictures/none.jpg",
+      "password": "adminpass",
+      "role": "admin",
+      "ekg_tests": []
+    }
+  }
+}
