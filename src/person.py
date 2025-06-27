@@ -13,6 +13,7 @@ class Person:
     - ekg_tests (list): Liste von EKG-Testdaten (z. B. Dictionaries)
     - gender (str): Geschlecht der Person ("male", "female" oder "unknown")
     - role (str): Rolle der Person in der App, z. B. "user" oder "admin"
+    - username (str): Eindeutiger Benutzername für den Login
     
     Methoden:
     - get_full_name(): Gibt den vollständigen Namen im Format 'Nachname, Vorname' zurück.
@@ -20,7 +21,7 @@ class Person:
     - load_by_id(): Lädt eine Person anhand der ID aus einer übergebenen Datenbank.
     """
 
-    def __init__(self, id: int, date_of_birth: str, firstname: str, lastname: str, picture_path: str, ekg_tests, gender="unknown", role="user"):
+    def __init__(self, id: int, date_of_birth: str, firstname: str, lastname: str, picture_path: str, ekg_tests, gender="unknown", role="user", username=""):
         """
         Initialisiert eine neue Person mit den angegebenen Attributen.
 
@@ -34,6 +35,7 @@ class Person:
         self.ekg_tests = ekg_tests
         self.gender = gender
         self.role = role
+        self.username = username
 
     def get_full_name(self):
         """

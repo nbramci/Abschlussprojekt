@@ -31,7 +31,8 @@ def load_user_objects():
             person_dict["picture_path"],
             person_dict["ekg_tests"],
             person_dict.get("gender", "unknown"),
-            person_dict.get("role", "user")
+            person_dict.get("role", "user"),
+            person_dict.get("username", "")
         )
         person_list.append(current_person)
 

@@ -53,7 +53,7 @@ if submitted:
         st.session_state["current_user"] = next((p for p in all_users if p.username == matched_user["username"]), None)
         st.session_state["role"] = matched_user.get("role", "user")
         st.success("Login erfolgreich!")
-        st.experimental_rerun()
+        st.rerun()
     else:
         st.session_state["login_failed"] = True
 
@@ -92,7 +92,7 @@ if st.session_state["is_logged_in"]:
 
         if st.button("Logout"):
             reset_session()
-            st.experimental_rerun()
+            st.rerun()
 
         # EKG-Auswahl und Analyse
         ekg_tests = person.ekg_tests
