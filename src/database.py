@@ -28,3 +28,11 @@ def update_person(person_id, updated_data):
 # Funktion: Eine Person löschen
 def delete_person(person_id):
     personen_table.remove(PersonQuery.id == person_id)
+
+# Funktion: Eine Person anhand des Benutzernamens finden
+def find_person_by_username(username):
+    return personen_table.get(PersonQuery.username == username)
+
+# Funktion: Neue Person (z. B. durch Admin) einfügen
+def insert_new_user(user_data):
+    return personen_table.insert(user_data)
