@@ -102,11 +102,136 @@ if st.session_state["is_logged_in"]:
 
                     with col1:
                         st.markdown("### 🧍 Versuchsperson")
-                        st.image(person.picture_path, caption=person.get_full_name())
+                        st.image(person.picture_path, caption=person.get_full_name(), width=250)
                         st.markdown(f"**Name:** {person.get_full_name()}")
                         st.markdown(f"**ID:** `{person.id}`")
                         st.markdown(f"**Geburtsjahr:** {person.date_of_birth}")
                         st.markdown(f"**Maximale Herzfrequenz (geschätzt):** {person.calc_max_heart_rate()} bpm")
+
+                        # PDF Export Option für Admins (direkt nach Personendaten)
+                        ekg_tests = person.ekg_tests
+                        if ekg_tests:
+                            try:
+                                import fpdf
+                                fpdf_available = True
+                            except ImportError:
+                                fpdf_available = False
+                            if not fpdf_available:
+                                st.info("Das Paket 'fpdf' ist nicht installiert. Installiere es mit `pip install fpdf`, um die Analyse als PDF zu exportieren.")
+                            else:
+                                pass
+                        ekg_options = {f"Test {i+1} am {t['date']}": t["id"] for i, t in enumerate(ekg_tests)}
+                        # Fallback: selectbox muss existieren, sonst Standardwert nehmen
+                        selected_label = st.session_state.get("ekg_select_admin")
+                        if selected_label not in ekg_options:
+                            selected_label = list(ekg_options.keys())[0]
+                        selected_id = ekg_options[selected_label]
+                        selected_test = next(test for test in ekg_tests if test["id"] == selected_id)
+                        user_data = [person]
+                        ekg = EKGdata.load_by_id(selected_id, user_data)
+                        ekg.detect_peaks_globally()
+                        ekg.detect_rr_anomalies()
+                        min_ms = int(ekg.df["Zeit in ms"].min())
+                        max_ms = int(ekg.df["Zeit in ms"].max())
+                        slider_key = "slider_admin"
+                        # CSV-Export des gewählten EKG-Zeitbereichs (direkt nach Auswahl des Zeitbereichs)
+                        if ekg.df is not None and not ekg.df.empty:
+                            # set_time_range falls Slider gesetzt, sonst unverändert
+                            if slider_key in st.session_state:
+                                time_range = st.session_state[slider_key]
+                                ekg.set_time_range(time_range)
+                            csv = ekg.df.to_csv(index=False).encode("utf-8")
+                            st.download_button(
+                                label="📥 CSV des gewählten Zeitbereichs herunterladen",
+                                data=csv,
+                                file_name=f"{person.username}_{selected_test['date'].replace('.', '-')}_auswahl.csv",
+                                mime="text/csv",
+                                key="csv_admin_download_left"
+                            )
+                        if st.button("📝 Analyse-Zusammenfassung als PDF erstellen", key="pdf_admin_button"):
+                            from fpdf import FPDF
+                            import os
+
+                            class PDF(FPDF):
+                                def header(self):
+                                    self.set_font("Arial", "B", 12)
+                                    self.cell(0, 10, "EKG-Analyse-Zusammenfassung", ln=True, align="C")
+                                    self.ln(10)
+
+                            pdf = PDF()
+                            pdf.add_page()
+
+                            # Profilbild einfügen
+                            try:
+                                pdf.image(person.picture_path, x=10, y=15, w=30)
+                                pdf.ln(35)
+                            except:
+                                pass
+
+                            pdf.set_font("Arial", "", 12)
+                            pdf.cell(0, 10, f"Name: {person.get_full_name()}", ln=True)
+                            pdf.cell(0, 10, f"Geburtsjahr: {person.date_of_birth}", ln=True)
+                            pdf.cell(0, 10, f"Testdatum: {selected_test['date']}", ln=True)
+                            pdf.cell(0, 10, f"Maximale Herzfrequenz (geschätzt): {person.calc_max_heart_rate()} bpm", ln=True)
+                            estimated_hr_val = round(ekg.estimate_hr()) if hasattr(ekg, "estimate_hr") else "-"
+                            pdf.cell(0, 10, f"Geschätzte Herzfrequenz: {estimated_hr_val} bpm", ln=True)
+                            pdf.cell(0, 10, f"Gesamtdauer der Messung: {ekg.get_duration_str()}", ln=True)
+
+                            # Dauer des ausgewählten Bereichs
+                            try:
+                                start_ms = ekg.df["Zeit in ms"].min()
+                                end_ms = ekg.df["Zeit in ms"].max()
+                                range_duration_sec = (end_ms - start_ms) / 1000
+                                r_min = int(range_duration_sec // 60)
+                                r_sec = int(range_duration_sec % 60)
+                                range_str = f"{r_min:02d}:{r_sec:02d}"
+                                pdf.cell(0, 10, f"Dauer des gewählten Zeitbereichs: {range_str} Min.", ln=True)
+                            except:
+                                pdf.cell(0, 10, f"Dauer des gewählten Zeitbereichs: nicht verfügbar", ln=True)
+
+                            # Anzahl erkannter Peaks
+                            num_peaks = len(ekg.peaks) if hasattr(ekg, "peaks") else "-"
+                            pdf.cell(0, 10, f"Anzahl erkannter Peaks (Herzschläge): {num_peaks}", ln=True)
+                            pdf.ln(5)
+
+                            visible_anomalies = ekg.get_visible_rr_anomalies()
+                            if visible_anomalies:
+                                pdf.set_font("Arial", "B", 12)
+                                pdf.cell(0, 10, f"Anomalien: {len(visible_anomalies)} erkannt", ln=True)
+                                pdf.set_font("Arial", "", 10)
+                                col_width = 60
+                                items_per_row = 3
+                                for i, a in enumerate(visible_anomalies):
+                                    art = "Ausreißer hoch" if a > 2000 else "Ausreißer tief" if a < 400 else "Ausreißer"
+                                    text = f"{i+1}. {a} ms ({art})"
+                                    pdf.cell(col_width, 8, text, ln=False)
+                                    if (i + 1) % items_per_row == 0:
+                                        pdf.ln(8)
+                                if len(visible_anomalies) % items_per_row != 0:
+                                    pdf.ln(8)
+                            else:
+                                pdf.cell(0, 8, "Keine Anomalien im gewählten Bereich", ln=True)
+
+                            export_dir = "exports"
+                            os.makedirs(export_dir, exist_ok=True)
+                            pdf_path = os.path.join(export_dir, f"{person.username}_analyse.pdf")
+                            pdf.output(pdf_path)
+
+                            # Interaktive PDF-Vorschau mit Hinweis
+                            import base64
+                            import streamlit.components.v1 as components
+                            st.info("💡 Hinweis: Die Vorschau funktioniert evtl. nicht in Chrome. Bitte PDF ggf. direkt herunterladen.")
+                            with st.expander("📄 Vorschau der Analyse-Zusammenfassung"):
+                                try:
+                                    with open(pdf_path, "rb") as f_preview:
+                                        base64_pdf = base64.b64encode(f_preview.read()).decode("utf-8")
+                                        pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="600px" type="application/pdf"></iframe>'
+                                        components.html(pdf_display, height=620)
+                                except:
+                                    st.error("❌ PDF-Vorschau konnte nicht geladen werden. Bitte Browser wechseln oder Datei herunterladen.")
+
+                            with open(pdf_path, "rb") as f:
+                                st.download_button("📄 PDF herunterladen", data=f, file_name=f"{person.username}_analyse.pdf", mime="application/pdf")
 
                     with col2:
                         st.markdown("### ⚙️ Analyseoptionen")
@@ -119,19 +244,34 @@ if st.session_state["is_logged_in"]:
                             user_data = [person]
                             ekg = EKGdata.load_by_id(selected_id, user_data)
                             ekg.detect_peaks_globally()
+                            ekg.detect_rr_anomalies()
 
-                            min_ms = int(ekg.df.index.min())
-                            max_ms = int(ekg.df.index.max())
+                            min_ms = int(ekg.df["Zeit in ms"].min())
+                            max_ms = int(ekg.df["Zeit in ms"].max())
                             default_end = min(min_ms + 10000, max_ms)
 
                             st.write("#### Zeitbereich für Analyse auswählen")
                             time_range = st.slider("Analyse-Zeitraum (ms)",
-                                                   min_value=min_ms,
-                                                   max_value=max_ms,
-                                                   value=(min_ms, default_end),
-                                                   step=100,
-                                                   key="slider_admin")
+                                min_value=min_ms,
+                                max_value=max_ms,
+                                value=(min_ms, default_end),
+                                step=100,
+                                key="slider_admin")
+
                             ekg.set_time_range(time_range)
+                            # CSV-Export des gewählten EKG-Zeitbereichs (direkt nach Auswahl des Zeitbereichs)
+                            # (Export-Button nur in linker Spalte unter Personendaten)
+
+                            # Show anomalies in visible range
+                            if ekg.rr_anomalies is not None and len(ekg.rr_anomalies) > 0:
+                                visible_anomalies = ekg.get_visible_rr_anomalies()
+                                st.warning(f"⚠️ Es wurden {len(ekg.rr_anomalies)} RR-Anomalien erkannt, davon {len(visible_anomalies)} im aktuellen Zeitbereich.")
+                                anomaly_table = ekg.get_rr_anomaly_table()
+                                if not anomaly_table.empty:
+                                    st.dataframe(anomaly_table, use_container_width=True)
+                            else:
+                                st.success("✅ Keine RR-Anomalien erkannt.")
+
 
                             st.write("#### Analyse gesamter Messdaten")
                             st.write("Länge der Zeitreihe:", ekg.get_duration_str())
@@ -152,6 +292,8 @@ if st.session_state["is_logged_in"]:
                             st.write("#### Herzfrequenz-Verlauf")
                             hr_fig = ekg.plot_hr_over_time()
                             st.plotly_chart(hr_fig, use_container_width=True, height=250, key="plot_admin_hr")
+
+
 
                 with tabs[1]:
                     st.write("#### Bearbeiten oder Löschen")
@@ -339,6 +481,132 @@ if st.session_state["is_logged_in"]:
                 st.markdown(f"**Geburtsjahr:** {person.date_of_birth}")
                 st.markdown(f"**Maximale Herzfrequenz (geschätzt):** {person.calc_max_heart_rate()} bpm")
 
+                # PDF Export Option für User (direkt nach Personendaten)
+                ekg_tests = person.ekg_tests
+                if ekg_tests:
+                    try:
+                        import fpdf
+                        fpdf_available = True
+                    except ImportError:
+                        fpdf_available = False
+                    if not fpdf_available:
+                        st.info("Das Paket 'fpdf' ist nicht installiert. Installiere es mit `pip install fpdf`, um die Analyse als PDF zu exportieren.")
+                    else:
+                        ekg_options = {f"Test {i+1} am {t['date']}": t["id"] for i, t in enumerate(ekg_tests)}
+                        selected_label = st.session_state.get("ekg_select_user")
+                        if selected_label not in ekg_options:
+                            selected_label = list(ekg_options.keys())[0]
+                        selected_id = ekg_options[selected_label]
+                        selected_test = next(test for test in ekg_tests if test["id"] == selected_id)
+                        user_data = [person]
+                        ekg = EKGdata.load_by_id(selected_id, user_data)
+                        ekg.detect_peaks_globally()
+                        ekg.detect_rr_anomalies()
+                        min_ms = int(ekg.df["Zeit in ms"].min())
+                        max_ms = int(ekg.df["Zeit in ms"].max())
+                        slider_key = "slider_user"
+                        # CSV-Export des gewählten EKG-Zeitbereichs (direkt nach Auswahl des Zeitbereichs)
+                        if ekg.df is not None and not ekg.df.empty:
+                            # set_time_range falls Slider gesetzt, sonst unverändert
+                            if slider_key in st.session_state:
+                                time_range = st.session_state[slider_key]
+                                ekg.set_time_range(time_range)
+                            csv = ekg.df.to_csv(index=False).encode("utf-8")
+                            st.download_button(
+                                label="📥 CSV des gewählten Zeitbereichs herunterladen",
+                                data=csv,
+                                file_name=f"{person.username}_{selected_test['date'].replace('.', '-')}_auswahl.csv",
+                                mime="text/csv",
+                                key="csv_user_download"
+                            )
+                        if st.button("📝 Analyse-Zusammenfassung als PDF erstellen", key="pdf_user_button"):
+                            from fpdf import FPDF
+                            import os
+
+                            class PDF(FPDF):
+                                def header(self):
+                                    self.set_font("Arial", "B", 12)
+                                    self.cell(0, 10, "EKG-Analyse-Zusammenfassung", ln=True, align="C")
+                                    self.ln(10)
+
+                            pdf = PDF()
+                            pdf.add_page()
+
+                            # Profilbild einfügen (sofern vorhanden)
+                            try:
+                                pdf.image(person.picture_path, x=10, y=15, w=30)
+                                pdf.ln(35)
+                            except:
+                                pass
+
+                            pdf.set_font("Arial", "", 12)
+
+                            # Personendaten
+                            pdf.cell(0, 10, f"Name: {person.get_full_name()}", ln=True)
+                            pdf.cell(0, 10, f"Geburtsjahr: {person.date_of_birth}", ln=True)
+                            pdf.cell(0, 10, f"Testdatum: {selected_test['date']}", ln=True)
+                            pdf.cell(0, 10, f"Maximale Herzfrequenz (geschätzt): {person.calc_max_heart_rate()} bpm", ln=True)
+                            estimated_hr_val = round(ekg.estimate_hr()) if hasattr(ekg, "estimate_hr") else "-"
+                            pdf.cell(0, 10, f"Geschätzte Herzfrequenz: {estimated_hr_val} bpm", ln=True)
+                            pdf.cell(0, 10, f"Gesamtdauer der Messung: {ekg.get_duration_str()}", ln=True)
+
+                            # Dauer des ausgewählten Bereichs
+                            try:
+                                start_ms = ekg.df["Zeit in ms"].min()
+                                end_ms = ekg.df["Zeit in ms"].max()
+                                range_duration_sec = (end_ms - start_ms) / 1000
+                                r_min = int(range_duration_sec // 60)
+                                r_sec = int(range_duration_sec % 60)
+                                range_str = f"{r_min:02d}:{r_sec:02d}"
+                                pdf.cell(0, 10, f"Dauer des gewählten Zeitbereichs: {range_str} Min.", ln=True)
+                            except:
+                                pdf.cell(0, 10, f"Dauer des gewählten Zeitbereichs: nicht verfügbar", ln=True)
+
+                            # Anzahl erkannter Peaks
+                            num_peaks = len(ekg.peaks) if hasattr(ekg, "peaks") else "-"
+                            pdf.cell(0, 10, f"Anzahl erkannter Peaks (Herzschläge): {num_peaks}", ln=True)
+                            pdf.ln(5)
+
+                            # Anomalien (nur sichtbare im gewählten Bereich)
+                            visible_anomalies = ekg.get_visible_rr_anomalies()
+                            if visible_anomalies:
+                                pdf.set_font("Arial", "B", 12)
+                                pdf.cell(0, 10, f"Anomalien: {len(visible_anomalies)} erkannt", ln=True)
+                                pdf.set_font("Arial", "", 10)
+                                col_width = 60
+                                items_per_row = 3
+                                for i, a in enumerate(visible_anomalies):
+                                    art = "Ausreißer hoch" if a > 2000 else "Ausreißer tief" if a < 400 else "Ausreißer"
+                                    text = f"{i+1}. {a} ms ({art})"
+                                    pdf.cell(col_width, 8, text, ln=False)
+                                    if (i + 1) % items_per_row == 0:
+                                        pdf.ln(8)
+                                if len(visible_anomalies) % items_per_row != 0:
+                                    pdf.ln(8)
+                            else:
+                                pdf.cell(0, 8, "Keine Anomalien im gewählten Bereich", ln=True)
+
+                            export_dir = "exports"
+                            os.makedirs(export_dir, exist_ok=True)
+                            pdf_path = os.path.join(export_dir, f"{person.username}_analyse.pdf")
+                            pdf.output(pdf_path)
+
+                            # Interaktive PDF-Vorschau mit Hinweis
+                            import base64
+                            import streamlit.components.v1 as components
+                            st.info("💡 Hinweis: Die Vorschau funktioniert evtl. nicht in Chrome. Bitte PDF ggf. direkt herunterladen.")
+                            with st.expander("📄 Vorschau der Analyse-Zusammenfassung"):
+                                try:
+                                    with open(pdf_path, "rb") as f_preview:
+                                        base64_pdf = base64.b64encode(f_preview.read()).decode("utf-8")
+                                        pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="600px" type="application/pdf"></iframe>'
+                                        components.html(pdf_display, height=620)
+                                except:
+                                    st.error("❌ PDF-Vorschau konnte nicht geladen werden. Bitte Browser wechseln oder Datei herunterladen.")
+
+                            with open(pdf_path, "rb") as f:
+                                st.download_button("📄 PDF herunterladen", data=f, file_name=f"{person.username}_analyse.pdf", mime="application/pdf")
+
             with col2:
                 st.markdown("### ⚙️ Analyseoptionen")
                 ekg_tests = person.ekg_tests
@@ -350,19 +618,33 @@ if st.session_state["is_logged_in"]:
                     user_data = [person]
                     ekg = EKGdata.load_by_id(selected_id, user_data)
                     ekg.detect_peaks_globally()
+                    ekg.detect_rr_anomalies()
 
-                    min_ms = int(ekg.df.index.min())
-                    max_ms = int(ekg.df.index.max())
+                    min_ms = int(ekg.df["Zeit in ms"].min())
+                    max_ms = int(ekg.df["Zeit in ms"].max())
                     default_end = min(min_ms + 10000, max_ms)
 
                     st.write("#### Zeitbereich für Analyse auswählen")
                     time_range = st.slider("Analyse-Zeitraum (ms)",
-                                           min_value=min_ms,
-                                           max_value=max_ms,
-                                           value=(min_ms, default_end),
-                                           step=100,
-                                           key="slider_user")
+                       min_value=min_ms,
+                       max_value=max_ms,
+                       value=(min_ms, default_end),
+                       step=100,
+                       key="slider_user")
+                    
                     ekg.set_time_range(time_range)
+
+
+                    # Show anomalies in visible range
+                    if ekg.rr_anomalies is not None and len(ekg.rr_anomalies) > 0:
+                        visible_anomalies = ekg.get_visible_rr_anomalies()
+                        st.warning(f"⚠️ Es wurden {len(ekg.rr_anomalies)} RR-Anomalien erkannt, davon {len(visible_anomalies)} im aktuellen Zeitbereich.")
+                        anomaly_table = ekg.get_rr_anomaly_table()
+                        if not anomaly_table.empty:
+                            st.dataframe(anomaly_table, use_container_width=True)
+                    else:
+                        st.success("✅ Keine RR-Anomalien erkannt.")
+
 
                     st.write("#### Analyse gesamter Messdaten")
                     st.write("Länge der Zeitreihe:", ekg.get_duration_str())
@@ -370,6 +652,7 @@ if st.session_state["is_logged_in"]:
                         st.warning("Hinweis: In der ausgewählten EKG-Datei wurden fehlerhafte Zeitstempel erkannt. Diese wurden automatisch korrigiert.")
                     estimated_hr = ekg.estimate_hr()
                 else:
+                    pass
                     st.info("Keine EKG-Daten für diese Person verfügbar.")
 
                 if ekg_tests:
@@ -383,4 +666,6 @@ if st.session_state["is_logged_in"]:
                     st.write("#### Herzfrequenz-Verlauf")
                     hr_fig = ekg.plot_hr_over_time()
                     st.plotly_chart(hr_fig, use_container_width=True, height=250, key="plot_user_hr")
+
+
 
