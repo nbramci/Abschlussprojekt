@@ -179,13 +179,11 @@ if st.session_state["is_logged_in"]:
                                 from fpdf import FPDF
                                 import os
 
-                                # Plotly-Figur des EKGs als PNG erzeugen
-                                import plotly.io as pio
                                 fig = ekg.plot_time_series()
                                 export_dir = "exports"
                                 os.makedirs(export_dir, exist_ok=True)
-                                png_path = os.path.join(export_dir, f"{person.username}_ekg_snapshot.png")
-                                fig.write_image(png_path, format="png", engine="kaleido")
+                                html_path = os.path.join(export_dir, f"{person.username}_ekg_snapshot.html")
+                                fig.write_html(html_path)
 
                                 class PDF(FPDF):
                                     def header(self):
@@ -228,7 +226,7 @@ if st.session_state["is_logged_in"]:
                                 except:
                                     pdf.cell(0, 8, f"Dauer des gewählten Zeitbereichs: nicht verfügbar", ln=1)
 
-                                pdf.cell(0, 8, "EKG-Zeitreihe auf der nächsten Seite", ln=1)
+                                pdf.cell(0, 8, "EKG-Zeitreihe als interaktive HTML-Datei verfügbar", ln=1)
 
                                 num_peaks = len(ekg.peaks) if hasattr(ekg, "peaks") else "-"
                                 pdf.cell(0, 8, f"Anzahl erkannter Peaks (Herzschläge): {num_peaks}", ln=1)
@@ -254,20 +252,26 @@ if st.session_state["is_logged_in"]:
                                 else:
                                     pdf.cell(0, 8, "Keine Anomalien im gewählten Bereich", ln=1)
 
+                                # Hinweis auf interaktiven HTML-Export
                                 pdf.add_page()
-
-                                page_width = pdf.w - 2 * pdf.l_margin
-                                try:
-                                    pdf.image(png_path, x=pdf.l_margin, y=pdf.get_y(), w=page_width)
-                                    pdf.ln(90)
-                                except:
-                                    pass
+                                pdf.set_font("Arial", "B", 14)
+                                pdf.cell(0, 10, "Interaktive EKG-Grafik als HTML-Datei exportiert.", ln=True)
+                                pdf.set_font("Arial", "", 11)
+                                pdf.multi_cell(0, 8, "Die EKG-Zeitreihe steht als interaktive HTML-Datei zur Verfügung. Öffnen Sie die heruntergeladene Datei im Browser, um die Grafik zu betrachten.")
 
                                 pdf_path = os.path.join(export_dir, f"{person.username}_analyse.pdf")
                                 pdf.output(pdf_path)
 
                                 with open(pdf_path, "rb") as f:
                                     st.download_button("📄 PDF herunterladen", data=f, file_name=f"{person.username}_analyse.pdf", mime="application/pdf")
+
+                                with open(html_path, "rb") as f:
+                                    st.download_button(
+                                        "📊 Interaktive Grafik herunterladen (HTML)",
+                                        data=f,
+                                        file_name=f"{person.username}_ekg_snapshot.html",
+                                        mime="text/html"
+                                    )
                         else:
                             st.info("❕ Keine EKG-Daten für diese Person vorhanden.")
 
@@ -580,105 +584,108 @@ if st.session_state["is_logged_in"]:
                             mime="text/csv",
                             key="csv_user_download"
                         )
-                    if st.button("📝 Analyse-Zusammenfassung als PDF erstellen", key="pdf_user_button"):
-                        from fpdf import FPDF
-                        import os
+                if st.button("📝 Analyse-Zusammenfassung als PDF erstellen", key="pdf_user_button"):
+                    from fpdf import FPDF
+                    import os
 
-                        # Plotly-Figur des EKGs als PNG erzeugen
-                        import plotly.io as pio
-                        fig = ekg.plot_time_series()
-                        export_dir = "exports"
-                        os.makedirs(export_dir, exist_ok=True)
-                        png_path = os.path.join(export_dir, f"{person.username}_ekg_snapshot.png")
-                        fig.write_image(png_path, format="png", engine="kaleido")
+                    fig = ekg.plot_time_series()
+                    export_dir = "exports"
+                    os.makedirs(export_dir, exist_ok=True)
+                    html_path = os.path.join(export_dir, f"{person.username}_ekg_snapshot.html")
+                    fig.write_html(html_path)
 
-                        class PDF(FPDF):
-                            def header(self):
-                                self.set_font("Arial", "B", 12)
-                                self.cell(0, 10, "EKG-Analyse-Zusammenfassung", ln=True, align="C")
-                                self.ln(10)
+                    class PDF(FPDF):
+                        def header(self):
+                            self.set_font("Arial", "B", 12)
+                            self.cell(0, 10, "EKG-Analyse-Zusammenfassung", ln=True, align="C")
+                            self.ln(10)
 
-                        pdf = PDF()
-                        pdf.add_page()
+                    pdf = PDF()
+                    pdf.add_page()
 
-                        # Profilbild links oben
-                        try:
-                            pdf.image(person.picture_path, x=10, y=15, w=30)
-                        except:
-                            pass
+                    # Profilbild links oben
+                    try:
+                        pdf.image(person.picture_path, x=10, y=15, w=30)
+                    except:
+                        pass
 
-                        # Zeilenumbruch nach Bild, damit kein Text auf dem Bild steht
-                        pdf.ln(35)
+                    # Zeilenumbruch nach Bild, damit kein Text auf dem Bild steht
+                    pdf.ln(35)
 
-                        # Alle Personendaten unter dem Bild
-                        pdf.set_font("Arial", "B", 14)
-                        pdf.cell(0, 10, f"Name: {person.get_full_name()}", ln=True)
-                        pdf.set_font("Arial", "", 12)
-                        pdf.cell(0, 10, f"ID: {person.id}", ln=True)
-                        pdf.cell(0, 10, f"Geburtsjahr: {person.date_of_birth}", ln=True)
+                    # Alle Personendaten unter dem Bild
+                    pdf.set_font("Arial", "B", 14)
+                    pdf.cell(0, 10, f"Name: {person.get_full_name()}", ln=True)
+                    pdf.set_font("Arial", "", 12)
+                    pdf.cell(0, 10, f"ID: {person.id}", ln=True)
+                    pdf.cell(0, 10, f"Geburtsjahr: {person.date_of_birth}", ln=True)
 
-                        # Testdatum und Herzfrequenz
-                        pdf.set_font("Arial", "", 12)
-                        pdf.cell(0, 8, f"Testdatum: {selected_test['date']}", ln=1)
-                        pdf.cell(0, 8, f"Maximale Herzfrequenz (geschätzt): {person.calc_max_heart_rate()} bpm", ln=1)
-                        estimated_hr_val = round(ekg.estimate_hr()) if hasattr(ekg, "estimate_hr") else "-"
-                        pdf.cell(0, 8, f"Geschätzte Herzfrequenz: {estimated_hr_val} bpm", ln=1)
-                        pdf.cell(0, 8, f"Gesamtdauer der Messung: {ekg.get_duration_str()}", ln=1)
+                    # Testdatum und Herzfrequenz
+                    pdf.set_font("Arial", "", 12)
+                    pdf.cell(0, 8, f"Testdatum: {selected_test['date']}", ln=1)
+                    pdf.cell(0, 8, f"Maximale Herzfrequenz (geschätzt): {person.calc_max_heart_rate()} bpm", ln=1)
+                    estimated_hr_val = round(ekg.estimate_hr()) if hasattr(ekg, "estimate_hr") else "-"
+                    pdf.cell(0, 8, f"Geschätzte Herzfrequenz: {estimated_hr_val} bpm", ln=1)
+                    pdf.cell(0, 8, f"Gesamtdauer der Messung: {ekg.get_duration_str()}", ln=1)
 
-                        try:
-                            start_ms = ekg.df["Zeit in ms"].min()
-                            end_ms = ekg.df["Zeit in ms"].max()
-                            range_duration_sec = (end_ms - start_ms) / 1000
-                            r_min = int(range_duration_sec // 60)
-                            r_sec = int(range_duration_sec % 60)
-                            range_str = f"{r_min} Minuten und {r_sec} Sekunden"
-                            pdf.cell(0, 8, f"Dauer des gewählten Zeitbereichs: {range_str}", ln=1)
-                        except:
-                            pdf.cell(0, 8, f"Dauer des gewählten Zeitbereichs: nicht verfügbar", ln=1)
+                    try:
+                        start_ms = ekg.df["Zeit in ms"].min()
+                        end_ms = ekg.df["Zeit in ms"].max()
+                        range_duration_sec = (end_ms - start_ms) / 1000
+                        r_min = int(range_duration_sec // 60)
+                        r_sec = int(range_duration_sec % 60)
+                        range_str = f"{r_min} Minuten und {r_sec} Sekunden"
+                        pdf.cell(0, 8, f"Dauer des gewählten Zeitbereichs: {range_str}", ln=1)
+                    except:
+                        pdf.cell(0, 8, f"Dauer des gewählten Zeitbereichs: nicht verfügbar", ln=1)
 
-                        pdf.cell(0, 8, "EKG-Zeitreihe auf der nächsten Seite", ln=1)
+                    pdf.cell(0, 8, "EKG-Zeitreihe als interaktive HTML-Datei verfügbar", ln=1)
 
-                        # Anzahl erkannter Peaks
-                        num_peaks = len(ekg.peaks) if hasattr(ekg, "peaks") else "-"
-                        pdf.cell(0, 8, f"Anzahl erkannter Peaks (Herzschläge): {num_peaks}", ln=1)
+                    # Anzahl erkannter Peaks
+                    num_peaks = len(ekg.peaks) if hasattr(ekg, "peaks") else "-"
+                    pdf.cell(0, 8, f"Anzahl erkannter Peaks (Herzschläge): {num_peaks}", ln=1)
 
-                        pdf.ln(5)
+                    pdf.ln(5)
 
-                        # Anomalien (sichtbar im gewählten Bereich)
-                        visible_anomalies = ekg.get_visible_rr_anomalies()
-                        pdf.set_font("Arial", "B", 12)
-                        pdf.cell(0, 8, f"Anomalien: {len(visible_anomalies)} erkannt (im ausgewählten Bereich)", ln=1)
-                        pdf.set_font("Arial", "", 10)
+                    # Anomalien (sichtbar im gewählten Bereich)
+                    visible_anomalies = ekg.get_visible_rr_anomalies()
+                    pdf.set_font("Arial", "B", 12)
+                    pdf.cell(0, 8, f"Anomalien: {len(visible_anomalies)} erkannt (im ausgewählten Bereich)", ln=1)
+                    pdf.set_font("Arial", "", 10)
 
-                        if visible_anomalies:
-                            col_width = 60
-                            items_per_row = 3
-                            for i, a in enumerate(visible_anomalies):
-                                art = "Ausreißer hoch" if a > 2000 else "Ausreißer tief" if a < 400 else "Ausreißer"
-                                text = f"{i+1}. {a} ms ({art})"
-                                pdf.cell(col_width, 8, text, ln=False)
-                                if (i + 1) % items_per_row == 0:
-                                    pdf.ln(8)
-                            if len(visible_anomalies) % items_per_row != 0:
+                    if visible_anomalies:
+                        col_width = 60
+                        items_per_row = 3
+                        for i, a in enumerate(visible_anomalies):
+                            art = "Ausreißer hoch" if a > 2000 else "Ausreißer tief" if a < 400 else "Ausreißer"
+                            text = f"{i+1}. {a} ms ({art})"
+                            pdf.cell(col_width, 8, text, ln=False)
+                            if (i + 1) % items_per_row == 0:
                                 pdf.ln(8)
-                        else:
-                            pdf.cell(0, 8, "Keine Anomalien im gewählten Bereich", ln=1)
+                        if len(visible_anomalies) % items_per_row != 0:
+                            pdf.ln(8)
+                    else:
+                        pdf.cell(0, 8, "Keine Anomalien im gewählten Bereich", ln=1)
 
-                        # Neue Seite für EKG-Bild
-                        pdf.add_page()
+                    # Hinweis auf interaktiven HTML-Export
+                    pdf.add_page()
+                    pdf.set_font("Arial", "B", 14)
+                    pdf.cell(0, 10, "Interaktive EKG-Grafik als HTML-Datei exportiert.", ln=True)
+                    pdf.set_font("Arial", "", 11)
+                    pdf.multi_cell(0, 8, "Die EKG-Zeitreihe steht als interaktive HTML-Datei zur Verfügung. Öffnen Sie die heruntergeladene Datei im Browser, um die Grafik zu betrachten.")
 
-                        page_width = pdf.w - 2 * pdf.l_margin
-                        try:
-                            pdf.image(png_path, x=pdf.l_margin, y=pdf.get_y(), w=page_width)
-                            pdf.ln(90)
-                        except:
-                            pass
+                    pdf_path = os.path.join(export_dir, f"{person.username}_analyse.pdf")
+                    pdf.output(pdf_path)
 
-                        pdf_path = os.path.join(export_dir, f"{person.username}_analyse.pdf")
-                        pdf.output(pdf_path)
+                    with open(pdf_path, "rb") as f:
+                        st.download_button("📄 PDF herunterladen", data=f, file_name=f"{person.username}_analyse.pdf", mime="application/pdf")
 
-                        with open(pdf_path, "rb") as f:
-                            st.download_button("📄 PDF herunterladen", data=f, file_name=f"{person.username}_analyse.pdf", mime="application/pdf")
+                    with open(html_path, "rb") as f:
+                        st.download_button(
+                            "📊 Interaktive Grafik herunterladen (HTML)",
+                            data=f,
+                            file_name=f"{person.username}_ekg_snapshot.html",
+                            mime="text/html"
+                        )
                 else:
                     st.info("Keine EKG-Daten für diese Person vorhanden.")
 
