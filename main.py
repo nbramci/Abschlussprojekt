@@ -185,7 +185,7 @@ if st.session_state["is_logged_in"]:
                                 export_dir = "exports"
                                 os.makedirs(export_dir, exist_ok=True)
                                 png_path = os.path.join(export_dir, f"{person.username}_ekg_snapshot.png")
-                                fig.write_image(png_path, format="png")
+                                fig.write_image(png_path, format="png", engine="kaleido")
 
                                 class PDF(FPDF):
                                     def header(self):
@@ -590,7 +590,7 @@ if st.session_state["is_logged_in"]:
                         export_dir = "exports"
                         os.makedirs(export_dir, exist_ok=True)
                         png_path = os.path.join(export_dir, f"{person.username}_ekg_snapshot.png")
-                        fig.write_image(png_path, format="png")
+                        fig.write_image(png_path, format="png", engine="kaleido")
 
                         class PDF(FPDF):
                             def header(self):
