@@ -1,23 +1,10 @@
-"""
-Dieses Modul enthält Funktionen zur Verarbeitung und Abfrage von Personendaten aus TinyDB.
-
-Funktionen:
-- load_user_objects(): Lädt alle Benutzer:innen aus der Datenbank und erstellt Person-Objekte.
-- get_person_object_from_list_by_name(): Gibt ein bestimmtes Person-Objekt anhand des Namens zurück.
-"""
-
+# Modul zum Laden von Personen aus der TinyDB-Datenbank und zur Erstellung von Person-Objekten
 from tinydb import TinyDB, Query
 import os
 from .person import Person  # Relativer Modulimport
 
-# -------------------- Personenbezogene Datenverarbeitung --------------------
-
-# Lädt alle Benutzer:innen aus TinyDB und erstellt Person-Objekte
 def load_user_objects():
-    """
-    Lädt alle Benutzer:innen aus der TinyDB-Datenbank 'tinydb_person_db.json',
-    erstellt für jeden Eintrag ein Person-Objekt und gibt eine Liste dieser Objekte zurück.
-    """
+    # Lädt alle Personen aus der Datenbank und erstellt Person-Objekte.
     db = TinyDB("data/tinydb_person_db.json")
     data = db.all()  # Zugriff auf _default-Tabelle
 
@@ -39,8 +26,8 @@ def load_user_objects():
 
     return person_list
 
-# Sucht ein bestimmtes Person-Objekt aus der Liste anhand des Namens
 def get_person_object_from_list_by_name(firstname, lastname, users):
+    # Gibt ein Person-Objekt anhand von Vor- und Nachname zurück.
     for person in users:
         if (
             person.firstname and person.lastname and

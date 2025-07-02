@@ -1,22 +1,33 @@
 """
 Hauptmodul der Streamlit-Anwendung zur Anzeige und Analyse von EKG-Daten.
 
-Diese App ermöglicht die Auswahl von Versuchspersonen, zeigt deren Basisinformationen
-sowie EKG-Daten und berechnet wichtige Kennwerte wie Herzfrequenz.
+Ermöglicht Login, Auswahl von Versuchspersonen, Anzeige von Basisdaten,
+Visualisierung von EKGs, Analyse und Export als CSV oder PDF.
 """
 
+# --- Globale Pfad-Konstanten ---
+DB_PATH = "data/tinydb_person_db.json"
+PROFILE_PIC_DIR = "data/profile_pictures"
+EKG_DATA_DIR = "data/ekg_data"
+
+
+# Standardbibliotheken
+import os
+import uuid
+import datetime
+import numpy as np
+
+# Drittanbieter-Bibliotheken
 import bcrypt
 import streamlit as st
 import pandas as pd
 from PIL import Image
 from plotly import express as px
-import numpy as np
-import datetime
+from tinydb import TinyDB, Query
 
+# Eigene Module
 from src.read_person_data import load_user_objects
 from src.ekgdata import EKGdata
-
-from tinydb import TinyDB, Query
 
 # Session-Variablen initialisieren, falls noch nicht vorhanden
 if "is_logged_in" not in st.session_state:
@@ -35,6 +46,9 @@ if not st.session_state["is_logged_in"]:
     st.title("Login")
 
 def reset_session():
+    """
+    Setzt alle Session-Variablen zurück und loggt den Benutzer aus.
+    """
     st.session_state["is_logged_in"] = False
     st.session_state["current_user_name"] = ""
     st.session_state["current_user"] = None
@@ -42,6 +56,8 @@ def reset_session():
     st.session_state["role"] = ""
 
 if not st.session_state["is_logged_in"]:
+    # Login-Formular mit Eingabe von Benutzername und Passwort.
+    # Bei erfolgreicher Anmeldung werden Session-Variablen gesetzt.
     with st.form("login_form"):
         st.subheader("Bitte einloggen")
         username = st.text_input("Benutzername", "")
@@ -49,7 +65,7 @@ if not st.session_state["is_logged_in"]:
         submitted = st.form_submit_button("Login")
 
         if submitted:
-            db = TinyDB("data/tinydb_person_db.json")
+            db = TinyDB(DB_PATH)
             users = db.table("_default").all()
 
             matched_user = None
@@ -83,6 +99,9 @@ if st.session_state.get("login_failed"):
     st.error("Ungültiger Benutzername oder Passwort.")
 
 if st.session_state["is_logged_in"]:
+    # Haupt-UI für angemeldete Benutzer.
+    # Admins können Benutzer suchen, neue Personen anlegen oder verwalten.
+    # User können ihr Profil sehen, EKGs analysieren und exportieren.
     person = None
     st.header("EKG-APP")
     if st.session_state["role"] == "admin":
@@ -97,7 +116,9 @@ if st.session_state["is_logged_in"]:
             index=0 if st.session_state.get("admin_mode") == "Benutzer suchen" else 1
         )
 
+        # Admin-Bereich: Benutzer suchen und verwalten
         if admin_option == "Benutzer suchen":
+            # Admin-Bereich: Benutzer suchen und verwalten
             all_users = load_user_objects()
             suchname = st.text_input("Benutzer suchen (Vor- oder Nachname)")
             matching_users = [
@@ -236,7 +257,7 @@ if st.session_state["is_logged_in"]:
                                 pdf.cell(0, 8, "EKG-Zeitreihe auf der nächsten Seite", ln=1)
 
                                 num_peaks = len(ekg.peaks) if hasattr(ekg, "peaks") else "-"
-                                pdf.cell(0, 8, f"Anzahl erkannter Peaks (Herzschläge): {num_peaks}", ln=1)
+                                pdf.cell(0, 8, f"Anzahl erkannter globaler Peaks (Herzschläge): {num_peaks}", ln=1)
 
                                 pdf.ln(5)
 
@@ -321,7 +342,7 @@ if st.session_state["is_logged_in"]:
                                 min_value=min_ms,
                                 max_value=max_ms,
                                 value=(min_ms, default_end),
-                                step=100,
+                                step=1000,
                                 key="slider_admin")
 
                             ekg.set_time_range(time_range)
@@ -377,15 +398,15 @@ if st.session_state["is_logged_in"]:
                             edit_lastname = st.text_input("Nachname", value=person.lastname)
                             edit_birth_year = st.number_input("Geburtsjahr", min_value=1920, max_value=datetime.date.today().year, value=int(person.date_of_birth))
                             edit_username = st.text_input("Benutzername", value=person.username)
-                            edit_password = st.text_input("Passwort", value=person.password)
+                            edit_password = st.text_input("Neues Passwort (leer lassen für unverändert)", type="password", value="")
                             edit_role = st.selectbox("Rolle", ["user", "admin"], index=["user", "admin"].index(person.role))
-                            edit_picture = st.file_uploader("Neues Profilbild hochladen", type=["jpg", "jpeg", "png"])
+                            edit_picture = st.file_uploader("Neues Profilbild hochladen (max. 1024x1024 Pixel empfohlen, um Darstellungsprobleme zu vermeiden)", type=["jpg", "jpeg", "png"])
 
                             if st.button("Änderungen speichern"):
-                                if not all([edit_firstname.strip(), edit_lastname.strip(), edit_username.strip(), edit_password.strip()]):
+                                if not all([edit_firstname.strip(), edit_lastname.strip(), edit_username.strip()]):  # Passwort ist jetzt optional
                                     st.error("❌ Bitte füllen Sie alle Felder aus.")
                                 else:
-                                    db = TinyDB("data/tinydb_person_db.json")
+                                    db = TinyDB(DB_PATH)
                                     query = Query()
                                     all_users = db.all()
                                     if any(u.get("username", "").lower() == edit_username.strip().lower() and u.get("username") != person.username for u in all_users):
@@ -394,25 +415,37 @@ if st.session_state["is_logged_in"]:
                                         picture_path = person.picture_path
                                         if edit_picture:
                                             import os
-                                            os.makedirs("data/profile_pictures", exist_ok=True)
-                                            picture_path = f"data/profile_pictures/{person.id}.jpg"
+                                            os.makedirs(PROFILE_PIC_DIR, exist_ok=True)
+                                            picture_path = f"{PROFILE_PIC_DIR}/{person.id}.jpg"
                                             with open(picture_path, "wb") as f:
                                                 f.write(edit_picture.read())
-                                        db.update({
+                                            try:
+                                                from PIL import Image
+                                                with Image.open(picture_path) as img:
+                                                    img.thumbnail((1024, 1024))
+                                                    img.save(picture_path)
+                                            except Exception:
+                                                pass
+                                        updated_data = {
                                             "firstname": edit_firstname,
                                             "lastname": edit_lastname,
                                             "date_of_birth": str(edit_birth_year),
                                             "username": edit_username,
-                                            "password": bcrypt.hashpw(edit_password.encode(), bcrypt.gensalt()).decode(),
                                             "role": edit_role,
                                             "picture_path": picture_path
-                                        }, query.username == person.username)
+                                        }
+                                        # Passwort nur aktualisieren, wenn ein neues eingegeben wurde
+                                        if edit_password.strip():
+                                            updated_data["password"] = bcrypt.hashpw(edit_password.encode(), bcrypt.gensalt()).decode()
+                                        else:
+                                            updated_data["password"] = person.password
+                                        db.update(updated_data, query.username == person.username)
                                         st.success("✅ Personendaten aktualisiert.")
                                         st.rerun()
 
                         with st.expander("🗑️ Person löschen"):
                             if st.button("Diese Person löschen"):
-                                db = TinyDB("data/tinydb_person_db.json")
+                                db = TinyDB(DB_PATH)
                                 query = Query()
                                 db.remove(query.username == person.username)
                                 st.success("✅ Person wurde gelöscht.")
@@ -425,15 +458,15 @@ if st.session_state["is_logged_in"]:
                             if st.button("EKG hochladen"):
                                 if ekg_file:
                                     import uuid, os
-                                    os.makedirs("data/ekg_data", exist_ok=True)
+                                    os.makedirs(EKG_DATA_DIR, exist_ok=True)
                                     ekg_id = str(uuid.uuid4())
                                     filename = f"{ekg_id}.txt"
-                                    file_path = os.path.join("data/ekg_data", filename)
+                                    file_path = os.path.join(EKG_DATA_DIR, filename)
 
                                     with open(file_path, "wb") as f:
                                         f.write(ekg_file.read())
 
-                                    db = TinyDB("data/tinydb_person_db.json")
+                                    db = TinyDB(DB_PATH)
                                     query = Query()
                                     db_user = db.get(query.username == person.username)
                                     existing_tests = db_user.get("ekg_tests", [])
@@ -455,11 +488,11 @@ if st.session_state["is_logged_in"]:
 
                                 if st.button("EKG-Test löschen"):
                                     import os
-                                    ekg_file_path = os.path.join("data/ekg_data", f"{selected_id_delete}.txt")
+                                    ekg_file_path = os.path.join(EKG_DATA_DIR, f"{selected_id_delete}.txt")
                                     if os.path.exists(ekg_file_path):
                                         os.remove(ekg_file_path)
 
-                                    db = TinyDB("data/tinydb_person_db.json")
+                                    db = TinyDB(DB_PATH)
                                     query = Query()
                                     user_entry = db.get(query.username == person.username)
                                     updated_ekgs = [t for t in user_entry.get("ekg_tests", []) if t["id"] != selected_id_delete]
@@ -474,6 +507,7 @@ if st.session_state["is_logged_in"]:
                 person = None
 
         elif admin_option == "Neue Person anlegen":
+            # Admin-Bereich: Neue Person anlegen
             with st.form("new_user_form"):
                 col1, col2 = st.columns(2)
                 with col1:
@@ -490,14 +524,14 @@ if st.session_state["is_logged_in"]:
                         step=1
                     )
                     role = st.selectbox("Rolle", ["user", "admin"])
-                    picture = st.file_uploader("Profilbild hochladen", type=["jpg", "png", "jpeg"])
+                    picture = st.file_uploader("Profilbild hochladen (max. 1024x1024 Pixel empfohlen, um Darstellungsprobleme zu vermeiden)", type=["jpg", "png", "jpeg"])
                 submitted = st.form_submit_button("Anlegen")
 
                 if submitted:
                     from tinydb import TinyDB
                     import uuid
                     import os
-                    db = TinyDB("data/tinydb_person_db.json")
+                    db = TinyDB(DB_PATH)
 
                     if not all([firstname.strip(), lastname.strip(), username.strip(), password.strip()]) or birth_year is None:
                         st.error("❌ Bitte füllen Sie alle Felder aus.")
@@ -511,14 +545,21 @@ if st.session_state["is_logged_in"]:
                                 user_id = uuid.uuid4().hex[:8]
                                 if user_id not in existing_ids:
                                     break
-                            picture_path = f"data/profile_pictures/{user_id}.jpg"
+                            picture_path = f"{PROFILE_PIC_DIR}/{user_id}.jpg"
 
                             if picture:
-                                os.makedirs("data/profile_pictures", exist_ok=True)
+                                os.makedirs(PROFILE_PIC_DIR, exist_ok=True)
                                 with open(picture_path, "wb") as f:
                                     f.write(picture.read())
+                                try:
+                                    from PIL import Image
+                                    with Image.open(picture_path) as img:
+                                        img.thumbnail((1024, 1024))
+                                        img.save(picture_path)
+                                except Exception:
+                                    pass
                             else:
-                                picture_path = "data/profile_pictures/none.jpg"
+                                picture_path = f"{PROFILE_PIC_DIR}/none.jpg"
 
                             db.insert({
                                 "id": user_id,
@@ -533,6 +574,7 @@ if st.session_state["is_logged_in"]:
                             })
                             st.success("✅ Neue Person erfolgreich hinzugefügt.")
     elif st.session_state["role"] == "user":
+        # User-Bereich: Eigenes Profil und EKG-Analyse
         person = st.session_state["current_user"]
         if st.button("Logout", key="user_logout"):
             reset_session()
@@ -653,7 +695,7 @@ if st.session_state["is_logged_in"]:
 
                         # Anzahl erkannter Peaks
                         num_peaks = len(ekg.peaks) if hasattr(ekg, "peaks") else "-"
-                        pdf.cell(0, 8, f"Anzahl erkannter Peaks (Herzschläge): {num_peaks}", ln=1)
+                        pdf.cell(0, 8, f"Anzahl erkannter globaler Peaks (Herzschläge): {num_peaks}", ln=1)
 
                         pdf.ln(5)
 
@@ -730,7 +772,7 @@ if st.session_state["is_logged_in"]:
                             min_value=min_ms,
                             max_value=max_ms,
                             value=(min_ms, default_end),
-                            step=100,
+                            step=1000,
                             key="slider_user")
                         ekg.set_time_range(time_range)
                         st.write("#### Peak-Erkennung anpassen")

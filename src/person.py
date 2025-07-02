@@ -1,33 +1,11 @@
+# Modul zur Repräsentation von Personen mit persönlichen Daten und EKG-Tests
 from datetime import datetime
 
 class Person:
-    """
-    Repräsentiert eine getestete Person inklusive persönlicher Daten und zugehöriger EKG-Tests.
-    
-    Attribute:
-    - id (int): Eindeutige ID der Person
-    - date_of_birth (str): Geburtsdatum im Format 'YYYY-MM-DD'
-    - firstname (str): Vorname
-    - lastname (str): Nachname
-    - picture_path (str): Pfad zum Bild der Person
-    - ekg_tests (list): Liste von EKG-Testdaten (z. B. Dictionaries)
-    - gender (str): Geschlecht der Person ("male", "female" oder "unknown")
-    - role (str): Rolle der Person in der App, z. B. "user" oder "admin"
-    - username (str): Eindeutiger Benutzername für den Login
-    - password (str): Passwort für den Login
-    
-    Methoden:
-    - get_full_name(): Gibt den vollständigen Namen im Format 'Nachname, Vorname' zurück.
-    - calc_max_heart_rate(): Berechnet die maximale Herzfrequenz auf Basis des Alters und Geschlechts.
-    - load_by_id(): Lädt eine Person anhand der ID aus einer übergebenen Datenbank.
-    """
+    # Repräsentiert eine Person mit persönlichen Daten und EKG-Tests.
 
     def __init__(self, id: int, date_of_birth: str, firstname: str, lastname: str, picture_path: str, ekg_tests, gender="unknown", role="user", username="", password=""):
-        """
-        Initialisiert eine neue Person mit den angegebenen Attributen.
-
-        role (str): Die Benutzerrolle ("user" oder "admin"), Standard ist "user"
-        """
+        # Initialisiert die Person mit den angegebenen Attributen.
         self.id = id
         self.date_of_birth = date_of_birth
         self.firstname = firstname
@@ -40,15 +18,11 @@ class Person:
         self.password = password
 
     def get_full_name(self):
-        """
-        Gibt den vollständigen Namen der Person zurück.
-        """
+        # Gibt den vollständigen Namen zurück.
         return self.lastname + ", " + self.firstname
 
     def calc_age(self):
-        """
-        Berechnet das aktuelle Alter der Person auf Basis des Geburtsjahres.
-        """
+        # Berechnet das Alter anhand des Geburtsjahres.
         try:
             birth_year = int(self.date_of_birth)
             current_year = datetime.now().year
@@ -57,9 +31,7 @@ class Person:
             return None
 
     def calc_max_heart_rate(self):
-        """
-        Berechnet die maximale Herzfrequenz basierend auf Alter und Geschlecht.
-        """
+        # Berechnet die maximale Herzfrequenz.
         age = self.calc_age()
         if hasattr(self, "gender") and self.gender.lower() == "female":
             return 226 - age
@@ -67,10 +39,7 @@ class Person:
 
     @classmethod
     def load_by_id(cls, id, db):
-        """
-        Sucht in der übergebenen Datenbank nach einer Person mit der angegebenen ID.
-        Gibt das entsprechende Objekt zurück oder wirft einen Fehler, falls nicht gefunden.
-        """
+        # Lädt eine Person anhand der ID aus der Datenbank.
         for person in db:
             if person.id == id:
                 return person

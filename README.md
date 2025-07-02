@@ -1,152 +1,127 @@
-# PUE_GruppeA
+# EKG-Analyse-App
 
-# Aufgabe 1
-
-## Projektübersicht 
-Dieses Repository liest gegebene Leistungsdaten aus einer CSV-Datei aus, sortiert diese und erstellt dann ein Leistungsdiagramm (Power Curve).
-
-## Nutzung 
-Damit der Code genutz werden kann muss zu erst das Repository geklont werden. 
-
-Anschließend muss PDM mit `pdm install` installiert werden. 
-
-## Leistungsdiagramm
-Nachdem Sie das Skript ausgeführt haben finden sie das Leistungsdiagramm (Power Curve) unter `figures/power_curve.png`.
-
-## Beispielgrafik
-
-![](figures/power_curve.png)
-
-
-
-
-
-# Aufgabe 2
-
-### UML-Diagramm
-
-Das folgende Use-Case-Diagramm stellt die Hauptfunktionen der EKG-Analyzer-App dar, sowie die Benutzerrollen und deren Berechtigungen:
-
-![](data/docs/UC-Diagramm.png)
-
-### Flow Chart
-
-Der folgende Flow-Chart zeigt die Verarbeitungsschritte und den logischen Ablauf der Aktivitätsanalyse:
-
-![](data/docs/ekg_data_acticity.svg)
+Diese Anwendung ermöglicht das Hochladen, die Visualisierung und Analyse von EKG-Daten. Benutzer:innen können sich anmelden, erhalten eine Visualisierung und automatische Anomalieerkennung in den EKG-Daten. Admins haben erweiterte Rechte, um Benutzer und Tests zu verwalten.
 
 ---
 
-## Beschreibung der App
+## Voraussetzungen
 
-Die App dient der Auswertung von EKG-Testdaten und Herzfrequenzanalysen anhand von CSV-Dateien. Diagnostiker können dabei Versuchspersonen auswählen, Tests analysieren und Herzfrequenzzonen bestimmen. Zudem können Plots generiert und Daten ausgewertet werden.
+Für den Betrieb der App müssen folgende Python-Pakete installiert sein:
+
+```bash
+pip install streamlit pandas numpy plotly scipy fpdf tinydb passlib[bcrypt] Pillow
+```
+
+
+- **streamlit**: Web-App-Framework  
+- **pandas**, **numpy**: Datenverarbeitung und numerische Berechnung  
+- **plotly**: Interaktive Visualisierung der EKG-Daten  
+- **scipy**: Signalverarbeitung (Peak-Erkennung)  
+- **fpdf**: PDF-Erstellung für Analyse-Zusammenfassungen  
+- **tinydb**: Speicherung der Benutzerdaten und EKG-Tests  
+- **passlib**: Passwort-Hashing und Sicherheit  
+- **Pillow**: Bildverarbeitung (z. B. Profilbilder)
 
 ## Starten der App
 
-Voraussetzungen:
-- Python 3.x
-- PDM (Python Dependency Manager)
 
-### Installieren und Starten
+Navigiere im Terminal in das Projektverzeichnis und führe folgenden Befehl aus:
 
 ```bash
-# Repository klonen
-Repository klonen und Ordnerstruktur dem Code anpassen
-
-# PDM installieren
-pip install pdm
-
-# Abhängigkeiten installieren
-pdm install streamlit, pandas, plotly, PIL
-
-# Streamlit-App starten
 streamlit run main.py
 ```
 
-## Screenshots der Anwendung
-
-![](data/docs/screenshot_sl.png)
-![](data/docs/screenshot_sl2.png)
+**Hinweis:**  
+Einige Module wie `read_person_data.py` verwenden relative Importe und können daher **nicht direkt** ausgeführt werden. Bitte starte die Anwendung immer über `main.py`.
 
 
+## Benutzerrollen & Test-Accounts
 
+Die Anwendung unterstützt zwei Rollen mit unterschiedlichen Berechtigungen:
 
+- **Benutzer (user)**: Kann sich einloggen, eigene EKG-Daten analysieren und downloaden.
+- **Administrator (admin)**: Hat zusätzlich Zugriff auf alle Benutzer:innen, Admins und deren EKG-Daten. Kann neue Benutzer:innen sowie neue EKG-Tests für Benutzer:innen, Admins oder sich selbst anlegen und verwalten.
 
-# Aufgabe 3
+Zum Testen können folgende Accounts verwendet werden:
 
-## Projektübersicht
+| Rolle   | Benutzername | Passwort |
+|---------|--------------|----------|
+| Admin   | admin        | admin    |
+| User    | jhuber       | 123      |
+| User    | yheyer       | 123      |
+| User    | yschmirander | 123      |
 
-In Aufgabe 3 wurde eine Funktion zur Erstellung einer Power Curve entwickelt, welche die Leistung (in Watt) über der Zeit darstellt. Dabei werden Schwellenwerte verwendet, um zu visualisieren, wie lange eine bestimmte Leistung überschritten wurde. Ziel war es, eine allgemeingültige Funktion zu erstellen, die für beliebige Leistungsdaten anwendbar ist.
+**Hinweis:** Passwörter werden mit `bcrypt` sicher verschlüsselt gespeichert.
 
-## Nutzung
+## Erfüllte Anforderungen
 
-Die Leistungsdaten werden aus einer CSV-Datei (z. B. `activity.csv`) eingelesen. Anschließend wird ein Plotly-Diagramm erzeugt, das interaktiv im Browser dargestellt wird.
+Die folgenden Projektanforderungen wurden erfolgreich umgesetzt:
 
-### Voraussetzungen
+- ✅ Deployment vorbereitet (via Streamlit Sharing mit requirements.txt)
+- ✅ Session-Zusammenfassung integriert
+- ✅ Datenexport (PDF/CSV) möglich
+- ✅ Automatische Anomalieerkennung im EKG-Signal
+- ✅ Optimiertes Design für Computer Bildschirme
+- ✅ Performante EKG-Verarbeitung durch Auflösungsreduktion (jeder 4. Wert wird verwendet)
+- ✅ Neue Personen und Tests können hinzugefügt werden
+- ✅ Bestehende Personen und deren Attribute/Bild können editiert werden
+- ✅ Berechnung und Anzeige der Herzrate über gesamten Zeitraum
+- ✅ Speicherung via TinyDB
+- ✅ Suchleiste zur Filterung der Personenauswahl in der Auswahlbox
+- ✅ Benutzerdefinierter Zeitbereich für EKG-Plots auswählbar
+- ✅ Einheitlicher Stil (z. B. Namenskonventionen, modulare Struktur)
+- ✅ Docstrings für Klassen, Methoden und Funktionen vorhanden
+- ✅ Testdatum und Länge der EKG-Zeitreihe werden angezeigt
+- ✅ Auswahlmöglichkeit zwischen mehreren Tests pro Person
+- ✅ Geburtsjahr, Name und Bild der Person werden angezeigt
+- ✅ Login-System mit Benutzer- und Admin-Rollen
+- ✅ Passwörter werden sicher mit `bcrypt` gehasht
+- ✅ Inkorrekte oder unregelmäßige Timestamps in EKG-Dateien werden automatisch erkannt und korrigiert
 
-- Python 3.x
-- PDM (Python Dependency Manager)
-- Abhängigkeiten: `pandas`, `plotly`, `numpy`
+## Projektstruktur
 
-### Installation und Ausführung
-
-```bash
-# Repository klonen
-Repository klonen und Ordnerstruktur dem Code anpassen
-
-# Abhängigkeiten installieren
-pdm install
-
-# Skript ausführen
-python main.py
+```text
+projekt/
+├── data/
+│   ├── ekg_data/               # EKG-Rohdaten
+│   ├── profile_pictures/       # Profilbilder
+│   └── tinydb_person_db.json   # Datenbankdatei
+├── exports/                    # Exportierte Reports (PDFs)
+├── src/
+│   ├── __init__.py
+│   ├── database.py             # Datenbanklogik (TinyDB)
+│   ├── ekgdata.py              # EKG-Verarbeitung & Analyse
+│   ├── person.py               # Datenmodell für Personen
+│   ├── read_person_data.py     # Einlesen & Zuordnung von EKG-Daten
+├── main.py                     # Streamlit App (Startpunkt)
+├── README.md
+├── requirements.txt
+├── pyproject.toml
+└── pdm.lock
 ```
 
-## Beschreibung der Funktion
+## Format der EKG-Dateien
 
-Die Funktion `power_curve()` befindet sich im Modul `powercurve.py` und berechnet aus einem Leistungs-Array eine Power Curve. Es wird ein interaktives Plotly-Diagramm erzeugt, das im Standardbrowser geöffnet wird. Die Rückgabe ist ein DataFrame mit den Schwellenwerten und den zugehörigen Zeitdauern.
+Es können ausschließlich EKG-Dateien im `.txt`-Format hochgeladen werden. Die Datei muss zwei Spalten enthalten:
 
-## Screenshot der Power Curve
+- **Erste Spalte:** Signalstärke in mV  
+- **Zweite Spalte:** Zeit in ms
 
-![](data/docs/screenshot_lk2.png)
+Die Datei darf keine Kopfzeile enthalten.
 
+Beispiel:
 
-
-# Aufgabe 4
-
-## Projektübersicht
-
-Im Rahmen von Aufgabe 4 wurde die bestehende Streamlit-App zur Analyse von EKG-Testdaten erweitert und strukturell verbessert. Die Anwendung ermöglicht nun die Auswahl von Versuchspersonen und EKG-Tests, visualisiert die EKG-Zeitreihe sowie die Herzfrequenz über den Zeitverlauf, und stellt individuelle Testergebnisse grafisch dar.
-
-Zudem wurde das Projekt modularisiert: Die Personen- und EKG-Logik wurden in eigene Klassen ausgelagert, und die Benutzerverwaltung erfolgt über eine eigene Datenladefunktion. Dies erleichtert Wartung und Erweiterung der App.
-
-## Nutzung
-
-Die App kann direkt über Streamlit gestartet werden. Dabei wird automatisch die Datei `person_db.json` geladen, über die die Benutzerdaten und die jeweiligen EKG-Tests verfügbar sind.
-
-### Voraussetzungen
-
-- Python 3.x
-- PDM (Python Dependency Manager)
-- Abhängigkeiten: `streamlit`, `pandas`, `plotly`, `Pillow`, `scipy`
-
-### Installation und Ausführung
-
-```bash
-# Repository klonen
-Repository klonen und Ordnerstruktur dem Code anpassen
-
-# PDM installieren (falls noch nicht vorhanden)
-pip install pdm
-
-# Abhängigkeiten installieren
-pdm install
-
-# App starten
-streamlit run main.py
+```
+124   0
+129   2
+126   4
+...
 ```
 
-## Screenshots der App
+## Bekannte Einschränkungen
 
-![](data/docs/screenshot_ekg.png)
-![](data/docs/screenshot_hf.png)
-
+- Kein responsives Design für Mobilgeräte   
+- Nach dem Hochladen eines EKG-Tests muss die entsprechende Person manuell neu ausgewählt werden, damit der Test angezeigt wird  
+- Keine Cloud-Anbindung – sämtliche Daten werden lokal gespeichert  
+- Beim Deployment via Streamlit Sharing kann es zu Problemen bei der Erstellung von Bildern für die PDF-Zusammenfassung kommen. Für diesen Fall wurde eine Fehlermeldung implementiert – anstelle des Bildes erscheint ein Hinweistext, dass das Bild nicht erstellt werden konnte.  
+  **Hinweis:** Für die volle Funktionalität (einschließlich PDF-Bilderstellung) sollte die Anwendung lokal ausgeführt werden.

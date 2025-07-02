@@ -1,3 +1,4 @@
+# Modul zur Verwaltung von Personendaten in einer TinyDB-Datenbank
 from tinydb import TinyDB, Query
 from tinydb.storages import JSONStorage
 from tinydb.middlewares import CachingMiddleware
@@ -9,30 +10,39 @@ personen_table = db  # Verwende Standard-Tabelle (_default)
 # Zugriff auf die Datenbankabfrage-API
 PersonQuery = Query()
 
-# Funktion: Alle Personen abrufen
 def get_all_persons():
+    # Gibt alle Personen aus der Datenbank zurück.
     return personen_table.all()
 
-# Funktion: Eine bestimmte Person suchen
 def find_person_by_id(person_id):
+    # Sucht eine Person anhand der ID.
     return personen_table.search(PersonQuery.id == person_id)
 
-# Funktion: Neue Person einfügen
 def insert_person(person_data):
+    # Fügt eine neue Person in die Datenbank ein.
     personen_table.insert(person_data)
 
-# Funktion: Eine Person aktualisieren
 def update_person(person_id, updated_data):
+    # Aktualisiert die Daten einer Person anhand der ID.
+    existing = personen_table.get(PersonQuery.id == person_id)
+    if not existing:
+        return
+
+    # Fehlende Felder aus bestehendem Datensatz ergänzen (z. B. Passwort)
+    for key, value in existing.items():
+        if key not in updated_data:
+            updated_data[key] = value
+
     personen_table.update(updated_data, PersonQuery.id == person_id)
 
-# Funktion: Eine Person löschen
 def delete_person(person_id):
+    # Löscht eine Person anhand der ID aus der Datenbank.
     personen_table.remove(PersonQuery.id == person_id)
 
-# Funktion: Eine Person anhand des Benutzernamens finden
 def find_person_by_username(username):
+    # Sucht eine Person anhand des Benutzernamens.
     return personen_table.get(PersonQuery.username == username)
 
-# Funktion: Neue Person (z. B. durch Admin) einfügen
 def insert_new_user(user_data):
+    # Fügt einen neuen Benutzer in die Datenbank ein.
     return personen_table.insert(user_data)

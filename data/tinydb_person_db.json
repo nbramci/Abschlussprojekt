@@ -1,1 +1,94 @@
-{"_default": {"1": {"id": "c40419f9", "firstname": "Admin", "lastname": "System", "username": "admin", "password": "$2b$12$ueD2pGzk/4f56yGCkDvIheNJ/wN6Xz/zFOQiHtn/NuG7HkjMH1vuy", "date_of_birth": "2000", "role": "admin", "picture_path": "data/profile_pictures/none.jpg", "ekg_tests": []}, "2": {"id": "d1427c5a", "firstname": "Niklas", "lastname": "Brandstetter", "username": "nbrand", "password": "$2b$12$MULYCUN.UXHNAE.TM5MajuVIC4aGInyvTox3GESbsQgGJVdwNeGKe", "date_of_birth": "2000", "role": "admin", "picture_path": "data/profile_pictures/d1427c5a.jpg", "ekg_tests": [{"id": "ca8fdf70-c0d0-46d6-94a4-839d4eadf1c7", "date": "02.07.2025"}]}, "3": {"id": "d78fd3be", "firstname": "Tamira", "lastname": "Grubbauer", "username": "tgrub", "password": "$2b$12$r/Yg13ymq9EA4H1984uQweJmOOOpe1RE.h3qymHSRb3LAFB8aAxfi", "date_of_birth": "2002", "role": "admin", "picture_path": "data/profile_pictures/d78fd3be.jpg", "ekg_tests": []}, "4": {"id": "c7d6b8a1", "date_of_birth": "1989", "firstname": "Julian", "lastname": "Huber", "username": "jhuber", "picture_path": "data/profile_pictures/c7d6b8a1.jpg", "password": "$2b$12$9URDiyKDIzr0Y3OxRNC7Xeph9eQtTpqMBhu6DQmG4Bwg/kxYhVVbG", "role": "user", "ekg_tests": [{"id": "01_Ruhe", "date": "10.02.2023"}, {"id": "04_Belastung", "date": "11.03.2023"}]}, "5": {"id": "5f2a9c3e", "date_of_birth": "1967", "firstname": "Yannic", "lastname": "Heyer", "username": "yheyer", "picture_path": "data/profile_pictures/5f2a9c3e.jpg", "password": "$2b$12$sh3JWPpppArFOAhTV4s7V.q6NHNH2iw4o/b3A7dBnOqCXjk/gMgN.", "role": "user", "ekg_tests": [{"id": "02_Ruhe", "date": "10.02.2023"}]}, "6": {"id": "e3b5a7f2", "date_of_birth": "1973", "firstname": "Yunus", "lastname": "Schmirander", "username": "yschmirander", "picture_path": "data/profile_pictures/e3b5a7f2.jpg", "password": "$2b$12$E/LD8l3AQu.JlklXI6vhFOv2ZowRPbkIn.Emv4sqQuP7o5T9kmMUW", "role": "user", "ekg_tests": [{"id": "03_Ruhe", "date": "11.03.2023"}]}, "7": {"id": "17f8f6a4", "firstname": "sdv", "lastname": "dsfs", "username": "sds", "password": "$2b$12$kS.BWnGMKexFUUmwFMcexuHfIqCajF35ATnyr4cNPrVhWqJOQbku6", "date_of_birth": "1920", "role": "user", "picture_path": "data/profile_pictures/none.jpg", "ekg_tests": []}}}
+{
+    "_default": {
+        "1": {
+            "id": "c40419f9",
+            "firstname": "Admin",
+            "lastname": "System",
+            "username": "admin",
+            "password": "$2b$12$ueD2pGzk/4f56yGCkDvIheNJ/wN6Xz/zFOQiHtn/NuG7HkjMH1vuy",
+            "date_of_birth": "2000",
+            "role": "admin",
+            "picture_path": "data/profile_pictures/none.jpg",
+            "ekg_tests": []
+        },
+        "2": {
+            "id": "d1427c5a",
+            "firstname": "Niklas",
+            "lastname": "Brandstetter",
+            "username": "nbrandstetter",
+            "password": "$2b$12$ia6nhMoyDJGpVL7HvRJ9Qe8zh52YlkiCrfzxKA7gfpmIm8l4E9mOe",
+            "date_of_birth": "2000",
+            "role": "admin",
+            "picture_path": "data/profile_pictures/d1427c5a.jpg",
+            "ekg_tests": [
+                {
+                    "id": "0ec99bfe-e9ad-4e2d-b826-03d19fe47dcf",
+                    "date": "02.07.2025"
+                }
+            ]
+        },
+        "3": {
+            "id": "d78fd3be",
+            "firstname": "Tamira",
+            "lastname": "Grubbauer",
+            "username": "tgrubbauer",
+            "password": "$2b$12$PyfckR1fjLcHslDRLkWXZOLQWbpN3j7Cn0xUjG2xebIg513kVM/KC",
+            "date_of_birth": "2002",
+            "role": "admin",
+            "picture_path": "data/profile_pictures/d78fd3be.jpg",
+            "ekg_tests": []
+        },
+        "4": {
+            "id": "c7d6b8a1",
+            "date_of_birth": "1989",
+            "firstname": "Julian",
+            "lastname": "Huber",
+            "username": "jhuber",
+            "picture_path": "data/profile_pictures/c7d6b8a1.jpg",
+            "password": "$2b$12$1mZpWBDbeDRcTl3EOaLuNu3JAOP2ofPC7C8B3S9nYH/qmeV9Jw86G",
+            "role": "user",
+            "ekg_tests": [
+                {
+                    "id": "01_Ruhe",
+                    "date": "10.02.2023"
+                },
+                {
+                    "id": "04_Belastung",
+                    "date": "11.03.2023"
+                }
+            ]
+        },
+        "5": {
+            "id": "5f2a9c3e",
+            "date_of_birth": "1967",
+            "firstname": "Yannic",
+            "lastname": "Heyer",
+            "username": "yheyer",
+            "picture_path": "data/profile_pictures/5f2a9c3e.jpg",
+            "password": "$2b$12$l1heDICyBLo9IKSwrxBTq.BBIisnNy.H9RCYlBhXuiiU8oZAcYz0.",
+            "role": "user",
+            "ekg_tests": [
+                {
+                    "id": "02_Ruhe",
+                    "date": "10.02.2023"
+                }
+            ]
+        },
+        "6": {
+            "id": "e3b5a7f2",
+            "date_of_birth": "1973",
+            "firstname": "Yunus",
+            "lastname": "Schmirander",
+            "username": "yschmirander",
+            "picture_path": "data/profile_pictures/e3b5a7f2.jpg",
+            "password": "$2b$12$CV1lj8e3mGnLrq50iXzF7.y342polFcotVj4ezfr8Rb6mS64Eb27a",
+            "role": "user",
+            "ekg_tests": [
+                {
+                    "id": "03_Ruhe",
+                    "date": "11.03.2023"
+                }
+            ]
+        }
+    }
+}
