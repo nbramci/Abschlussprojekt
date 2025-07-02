@@ -181,7 +181,6 @@ if st.session_state["is_logged_in"]:
 
                                 # Plotly-Figur des EKGs als PNG erzeugen
                                 import plotly.io as pio
-                                pio.renderers.default = "kaleido"
                                 fig = ekg.plot_time_series()
                                 png_bytes = fig.to_image(format="png")
                                 export_dir = "exports"
@@ -589,7 +588,6 @@ if st.session_state["is_logged_in"]:
 
                         # Plotly-Figur des EKGs als PNG erzeugen
                         import plotly.io as pio
-                        pio.renderers.default = "kaleido"
                         fig = ekg.plot_time_series()
                         png_bytes = fig.to_image(format="png")
                         export_dir = "exports"
