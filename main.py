@@ -182,12 +182,10 @@ if st.session_state["is_logged_in"]:
                                 # Plotly-Figur des EKGs als PNG erzeugen
                                 import plotly.io as pio
                                 fig = ekg.plot_time_series()
-                                png_bytes = fig.to_image(format="png")
                                 export_dir = "exports"
                                 os.makedirs(export_dir, exist_ok=True)
                                 png_path = os.path.join(export_dir, f"{person.username}_ekg_snapshot.png")
-                                with open(png_path, "wb") as f:
-                                    f.write(png_bytes)
+                                fig.write_image(png_path, format="png")
 
                                 class PDF(FPDF):
                                     def header(self):
@@ -589,12 +587,10 @@ if st.session_state["is_logged_in"]:
                         # Plotly-Figur des EKGs als PNG erzeugen
                         import plotly.io as pio
                         fig = ekg.plot_time_series()
-                        png_bytes = fig.to_image(format="png")
                         export_dir = "exports"
                         os.makedirs(export_dir, exist_ok=True)
                         png_path = os.path.join(export_dir, f"{person.username}_ekg_snapshot.png")
-                        with open(png_path, "wb") as f:
-                            f.write(png_bytes)
+                        fig.write_image(png_path, format="png")
 
                         class PDF(FPDF):
                             def header(self):
