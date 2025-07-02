@@ -76,6 +76,11 @@ class EKGdata:
 
         self.max_valid_time = self.df["Zeit in ms"].max()
 
+        self.rr_anomalies = pd.DataFrame()
+
+        self.peaks = []
+        self.peaks_detected = False
+
 
     def get_duration_str(self):
         """
@@ -86,10 +91,12 @@ class EKGdata:
         return f"{minutes} Minuten und {seconds} Sekunden"
 
     # Peaks (Herzschläge) im EKG-Signal finden
-    def detect_peaks_globally(self):
+    def detect_peaks_globally(self, height=None):
         """
         Erkennt Herzschläge (Peaks) im vollständigen EKG-Datensatz basierend auf einer dynamisch angepassten Höhe.
         Wendet Zeitkorrektur und Subsampling identisch zum Konstruktor an.
+
+        height (float, optional): Schwellwert für die Peak-Erkennung. Standard: 350.
         """
         from scipy.signal import find_peaks
         import numpy as np
@@ -117,24 +124,28 @@ class EKGdata:
         signal = full_df["Messwerte in mV"].values
 
         # Dynamischer Schwellenwert: Median + 2.25 * std
-        threshold = np.median(signal) + 2.25 * np.std(signal)
-        peaks, _ = find_peaks(signal, height=threshold)
+        if height is None:
+            height = 350  # Standardwert
+        peaks, _ = find_peaks(signal, height=height)
 
         self.all_peaks_df = full_df.iloc[peaks].copy()
+        self.peaks = peaks.tolist()
+        self.peaks_detected = True
 
     def detect_rr_anomalies(self, threshold_ms=300):
         """
         Erkennt Anomalien in den RR-Intervallen, wenn sie kürzer als threshold_ms sind.
         Speichert die Zeitpunkte dieser Anomalien in self.rr_anomalies (nur im sichtbaren Bereich).
         """
-        if not hasattr(self, "all_peaks_df") or self.all_peaks_df.empty:
+        import pandas as pd
+        if not self.peaks_detected or not hasattr(self, "all_peaks_df") or self.all_peaks_df.empty:
             raise ValueError("Bitte zuerst detect_peaks_globally() aufrufen.")
         peak_times = self.all_peaks_df["Zeit in ms"].values
         rr_intervals = peak_times[1:] - peak_times[:-1]
         anomaly_indices = [i+1 for i, rr in enumerate(rr_intervals) if rr < threshold_ms]
         max_time = self.df["Zeit in ms"].max()
-        self.rr_anomalies = self.all_peaks_df.iloc[anomaly_indices]
-        self.rr_anomalies = self.rr_anomalies[self.rr_anomalies["Zeit in ms"] <= max_time]
+        rr_df = self.all_peaks_df.iloc[anomaly_indices]
+        self.rr_anomalies = rr_df[rr_df["Zeit in ms"] <= max_time].copy()
 
     # Mittlere Herzfrequenz basierend auf den Peaks berechnen
     def estimate_hr(self):
@@ -197,7 +208,8 @@ class EKGdata:
         Berechnet und visualisiert die Herzfrequenz über die Zeit basierend auf RR-Intervallen.
         """
         if not hasattr(self, "all_peaks_df") or self.all_peaks_df.empty:
-            raise ValueError("Bitte zuerst detect_peaks_globally() aufrufen oder keine gültigen Peaks vorhanden.")
+            import plotly.graph_objects as go
+            return go.Figure().update_layout(title="Keine gültigen Peaks erkannt – bitte Schwellwert anpassen.")
 
         peak_df = self.all_peaks_df
         peak_times = peak_df["Zeit in ms"].values / 1000  # in Sekunden
